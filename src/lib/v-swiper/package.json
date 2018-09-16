@@ -1,0 +1,13 @@
+{
+  "name": "v-swiper",
+  "version": "1.0.0",
+  "description": "基于vue2项目的轻量，可配置，支持css过度动画及requestAnimationFrame动画的轮播组件",
+  "main": "index.js",
+  "author": "wks",
+  "license": "MIT",
+  "keywords": [
+    "v-swiper",
+    "vue",
+    "swiper"
+  ]
+}
