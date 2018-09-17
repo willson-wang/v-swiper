@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <swiper :list="bannerList" height="180px" :loop="true" :auto="true"></swiper>
+    <div style="margin-top: 10px"></div>
+    <swiper :list="bannerList" height="180px" :loop="true" :auto="true" direction="vertical"></swiper>
   </div>
 </template>
 

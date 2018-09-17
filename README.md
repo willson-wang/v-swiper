@@ -4,8 +4,11 @@
 2. 轻量、高性能轮播插件。目前支持 无缝衔接自动轮播、无限轮播、手势轮播
 3. 可选transition or requestAnimationFrame执行动画的方式
 4. 无任何第三方依赖，原生 js 封装
+5. 完整的单元测试
 
 ## 在线demo地址
+
+[demo预览](https://willson-wang.github.io/v-swiper/dist/index.html)
 
 ## NPM
 

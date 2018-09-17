@@ -1,11 +1,11 @@
 <template>
   <div class="swiper-wrap" ref="swiper" :class="className" :style="{height}">
-    <div class="swiper-item clearfix" ref="swiperItem" :style="styleObj" :class="[isTransition ? 'swiper-transition' : '']">
-      <div v-for="(item, index) in newList" :key="index" @click="selectItem(item)">
-        <img :src="item.img" :alt="'banner' + index" :style="{width: width + 'px', height}">
+    <div class="swiper-content clearfix" ref="swiperContent" :style="styleObj" :class="[isTransition ? 'swiper-transition' : '']">
+      <div v-for="(item, index) in newList" class="swiper-item" :key="index" @click="selectItem(item)">
+        <img :src="item.img" :alt="'banner' + index" :style="{width, height}">
       </div>
     </div>
-    <div class="swiper-dots">
+    <div class="swiper-dots" v-if="showDots">
       <span v-for="(item, index) in list" :key="index" :class="[index === fixIndex ? 'active' : '']"></span>
     </div>
     <div class="swiper-prev" v-if="isPrevShow" @click="changeItem('prev')">&lt;</div>
@@ -19,7 +19,10 @@ export default {
   name: 'swiper',
   props: {
     list: {
-      default: []
+      type: Array,
+      default: () => {
+        return []
+      }
     },
     direction: {
       type: String,
@@ -27,7 +30,7 @@ export default {
     },
     showDots: {
       type: Boolean,
-      default: false
+      default: true
     },
     dotsPosition: {
       type: String,
@@ -59,7 +62,7 @@ export default {
     },
     isTransition: {
       type: Boolean,
-      default: false
+      default: true
     },
     minMovingDistance: {
       type: Number,
@@ -79,11 +82,13 @@ export default {
     },
     className: {
       type: String
-    }
+    },
+    initWidth: String
   },
   computed: {
     width () {
-      return typeof window !== 'undefined' && window.innerWidth
+      const width = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth + 'px') : '100%'
+      return width
     },
     newList () {
       if (this.loop) {
@@ -95,26 +100,33 @@ export default {
       return this.list
     },
     styleObj () {
+      const transformx = this.direction === 'horizontal' ? this.transformx : 0
+      const transformy = this.direction === 'horizontal' ? 0 : this.transformx
+      const left = this.direction === 'horizontal' ? this.left : 0
+      const top = this.direction === 'horizontal' ? 0 : this.left
+      const width = this.direction === 'horizontal' ? parseInt(this.width) * this.newList.length + 'px' : '100%'
       return {
-        width: this.width * this.newList.length + 'px',
-        transform: `translate3d(${this.transformx}, 0, 0)`,
+        width,
+        transform: `translate3d(${transformx}, ${transformy}, 0)`,
         transitionDuration: `${this.newDuration}ms`,
-        left: this.left + 'px'
+        left: left + 'px',
+        top: top + 'px'
       }
     }
   },
   data () {
+    const initTransform = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth) : parseInt(this.height)
     return {
       currentIndex: this.loop ? 1 : 0,
-      transformx: this.loop && this.isTransition ? `-${window && window.innerWidth}px` : 0,
+      transformx: this.loop && this.isTransition ? `-${initTransform}px` : 0,
       fixIndex: 0,
       newDuration: this.isTransition ? this.duration : 0,
-      left: this.loop && !this.isTransition ? `-${window && window.innerWidth}` : 0
+      left: this.loop && !this.isTransition ? `-${initTransform}` : 0
     }
   },
   methods: {
     changeItem (key) {
-      key === 'next' ? this.go(++this.currentIndex, 'next') : this.go(--this.currentIndex, 'prev')
+      this.swiper.move(key)
     },
     selectItem (item) {
       this.$emit('selectItem', {...item, currentIndex: this.fixIndex})
@@ -125,6 +137,9 @@ export default {
         loop: this.loop,
         data: this.newList,
         isTransition: this.isTransition,
+        direction: this.direction,
+        height: this.height,
+        width: this.width,
         on: (res) => {
           this.transformx = res.transformx
           this.newDuration = res.newDuration
@@ -153,11 +168,11 @@ export default {
   position: relative;
   overflow: hidden;
 
-  .swiper-item {
+  .swiper-content {
     position: relative;
     >div {
       float: left;
-
+      font-size: 0;
     }
   }
 

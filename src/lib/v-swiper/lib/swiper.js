@@ -19,23 +19,24 @@ const DEFAULT_OPTIONS = {
 class Swiper {
   constructor (wrap, options) {
     this.options = Object.assign({}, DEFAULT_OPTIONS, options)
-    const { loop, isTransition, on, end } = this.options
+    const { loop, isTransition, on, end, direction, height } = this.options
+    const initTransform = direction === 'horizontal' ? (window && window.innerWidth) : parseInt(height)
     this.wrap = wrap
     this.swiperItem = this.wrap.children[0]
     this.data = this.options.data
     this.currentIndex = loop ? 1 : 0
-    this.transformx = loop && isTransition ? `-${window && window.innerWidth}px` : 0
+    this.transformx = loop && isTransition ? `-${initTransform}px` : 0
     this.listWidths = []
     this.fixIndex = 0
     this.newDuration = isTransition ? this.duration : 0
-    this.left = loop && !isTransition ? `-${window && window.innerWidth}` : 0
+    this.left = loop && !isTransition ? `-${initTransform}` : 0
     this.width = window && window.innerWidth
     this.on = on
     this.animateEnd = end
     this._isMoved = false
-    this.start = {}
-    this.move = {}
-    this.end = {}
+    this._start = {}
+    this._move = {}
+    this._end = {}
     this.timer = null
     this.timer1 = null
     this.timer2 = null
@@ -43,8 +44,12 @@ class Swiper {
     this.init()
   }
 
+  move (key) {
+    key === 'next' ? this.go(++this.currentIndex, 'next') : this.go(--this.currentIndex, 'prev')
+  }
+
   go (index, turn) {
-    let { isTransition, duration, loop, auto } = this.options
+    let { isTransition, duration, loop, auto, direction } = this.options
     this.newDuration = isTransition ? duration : 0
     if (!loop) {
       if (index >= this.listWidths.length) {
@@ -64,7 +69,7 @@ class Swiper {
       }
     }
     let other = turn === 'next' ? index - 1 : index + 1
-    if (!loop && index === 0) other = this.listWidths.length - 1
+    if (!loop && index === 0 && direction === 'horizontal') other = this.listWidths.length - 1
     isTransition ? this.setTransform(index, other) : this.setRequestAnimationFrame(index, other)
   }
 
@@ -155,19 +160,19 @@ class Swiper {
 
   touchstartHandler (e) {
     this.stop()
-    this.start.x = e.changedTouches[0].pageX
-    this.start.y = e.changedTouches[0].pageY
+    this._start.x = e.changedTouches[0].pageX
+    this._start.y = e.changedTouches[0].pageY
     this._isMoved = false
   }
 
   touchmoveHandler (e) {
     const { minMovingDistance, isTransition, direction } = this.options
     if (this.data.length === 1) return
-    this.move.x = e.changedTouches[0].pageX
-    this.move.y = e.changedTouches[0].pageY
+    this._move.x = e.changedTouches[0].pageX
+    this._move.y = e.changedTouches[0].pageY
 
-    let distanceX = this.move.x - this.start.x
-    let distanceY = this.move.y - this.start.y
+    let distanceX = this._move.x - this._start.x
+    let distanceY = this._move.y - this._start.y
 
     let distance = distanceY
 
@@ -177,21 +182,21 @@ class Swiper {
       distance = distanceX
     }
 
-    if ((((minMovingDistance && Math.abs(distance) >= minMovingDistance) || !minMovingDistance) && !isScrollY) || this._isMoved) {
+    if (((minMovingDistance && Math.abs(distance) >= minMovingDistance) || !minMovingDistance) || this._isMoved) {
       isTransition && this.setAnimationTransform(distance - this.listWidths[this.currentIndex])
       !isTransition && this.setAnimationLeft(distance - this.listWidths[this.currentIndex], 10)
     }
-    !isScrollY && e.preventDefault()
+    e.preventDefault()
   }
 
   touchendHandler (e) {
     const { direction, threshold, isTransition, auto, interval } = this.options
     if (this.data.length === 1) return
-    this.end.x = e.changedTouches[0].pageX
-    this.end.y = e.changedTouches[0].pageY
-    let distance = this.end.y - this.start.y
+    this._end.x = e.changedTouches[0].pageX
+    this._end.y = e.changedTouches[0].pageY
+    let distance = this._end.y - this._start.y
     if (direction === 'horizontal') {
-      distance = this.end.x - this.start.x
+      distance = this._end.x - this._start.x
     }
 
     distance = this.getDistance(distance)
@@ -249,10 +254,12 @@ class Swiper {
     }
   }
 
-  getListWidths () {
+  getListWidthsOrHeight () {
+    const { direction, height } = this.options
     const tempArr = []
     for (let i = 0; i < this.data.length; i++) {
-      tempArr.push(this.width * i)
+      let temp = direction === 'horizontal' ? this.width : parseInt(height)
+      tempArr.push(temp * i)
     }
     this.listWidths = tempArr
   }
@@ -292,7 +299,7 @@ class Swiper {
 
   init () {
     if (!this.data.length) return
-    this.getListWidths()
+    this.getListWidthsOrHeight()
     this.bindEvent()
     this.options.auto && this.autoPlay()
   }
