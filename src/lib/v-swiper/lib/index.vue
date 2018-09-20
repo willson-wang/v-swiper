@@ -86,10 +86,6 @@ export default {
     initWidth: String
   },
   computed: {
-    width () {
-      const width = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth + 'px') : '100%'
-      return width
-    },
     newList () {
       if (this.loop) {
         const tempArr = JSON.parse(JSON.stringify(this.list))
@@ -116,7 +112,9 @@ export default {
   },
   data () {
     const initTransform = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth) : parseInt(this.height)
+    const width = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth + 'px') : '100%'
     return {
+      width,
       currentIndex: this.loop ? 1 : 0,
       transformx: this.loop && this.isTransition ? `-${initTransform}px` : 0,
       fixIndex: 0,
@@ -149,12 +147,25 @@ export default {
         },
         end: (res) => {
           this.$emit('annimateEnd', res)
+        },
+        resize: () => {
+          this.recomputed()
         }
       })
+    },
+    recomputed () {
+      const rect = this.$refs.swiper.getBoundingClientRect()
+      this.width = rect.width + 'px'
+      const initTransform = this.direction === 'horizontal' ? rect.width : parseInt(this.height)
+      this.transformx = this.loop && this.isTransition ? `-${initTransform}px` : 0
+      this.left = this.loop && !this.isTransition ? `-${initTransform}` : 0
     }
   },
   mounted () {
-    this.initSwiper()
+    this.$nextTick(() => {
+      this.recomputed()
+      this.initSwiper()
+    })
   },
   beforeDestroy () {
     this.swiper.destroy()

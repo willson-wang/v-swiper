@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS = {
 class Swiper {
   constructor (wrap, options) {
     this.options = Object.assign({}, DEFAULT_OPTIONS, options)
-    const { loop, isTransition, on, end, direction, height } = this.options
+    const { loop, isTransition, on, end, direction, height, width, resize } = this.options
     const initTransform = direction === 'horizontal' ? (window && window.innerWidth) : parseInt(height)
     this.wrap = wrap
     this.swiperItem = this.wrap.children[0]
@@ -30,9 +30,10 @@ class Swiper {
     this.fixIndex = 0
     this.newDuration = isTransition ? this.duration : 0
     this.left = loop && !isTransition ? `-${initTransform}` : 0
-    this.width = window && window.innerWidth
+    this.width = (width && parseInt(width)) || window.innerWidth
     this.on = on
     this.animateEnd = end
+    this.resize = resize
     this._isMoved = false
     this._start = {}
     this._move = {}
@@ -215,9 +216,18 @@ class Swiper {
   }
 
   resizeHandler () {
+    this.resize && this.resize()
+    this.destroy()
     this.width = window && window.innerWidth
-    this.setImgWidth()
-    this.getListWidths()
+    this.init()
+  }
+
+  focusHandler () {
+    this.options.auto && this.autoPlay()
+  }
+
+  blurHandler () {
+    this.stop()
   }
 
   setImgWidth () {
@@ -229,10 +239,14 @@ class Swiper {
 
   autoPlay () {
     const { interval } = this.options
-    this.timer1 = setTimeout(() => {
-      this.go(++this.currentIndex, 'next')
-      this.autoPlay()
-    }, interval)
+    this.timer1 && clearTimeout(this.timer1)
+    var _move = () => {
+      this.timer1 = setTimeout(() => {
+        this.go(++this.currentIndex, 'next')
+        _move()
+      }, interval)
+    }
+    _move()
   }
 
   stop () {
@@ -282,12 +296,17 @@ class Swiper {
     this.wrap.addEventListener('touchmove', this.touchmoveHandler.bind(this), false)
     this.wrap.addEventListener('touchend', this.touchendHandler.bind(this), false)
     window.addEventListener('resize', this.resizeHandler.bind(this), false)
+    window.addEventListener('focus', this.focusHandler.bind(this), false)
+    window.addEventListener('blur', this.blurHandler.bind(this), false)
   }
 
   unbindEvent () {
     this.wrap.removeEventListener('touchstart', this.touchstartHandler.bind(this), false)
     this.wrap.removeEventListener('touchmove', this.touchmoveHandler.bind(this), false)
     this.wrap.removeEventListener('touchend', this.touchendHandler.bind(this), false)
+    window.removeEventListener('resize', this.resizeHandler.bind(this), false)
+    window.removeEventListener('focus', this.focusHandler.bind(this), false)
+    window.removeEventListener('blur', this.blurHandler.bind(this), false)
   }
 
   destroy () {
@@ -301,6 +320,7 @@ class Swiper {
     if (!this.data.length) return
     this.getListWidthsOrHeight()
     this.bindEvent()
+    this.stop()
     this.options.auto && this.autoPlay()
   }
 }
