@@ -29,32 +29,29 @@ new Vue({
 ## 基本用法
 
 ```
-<div class="swiper-wrap" ref="swiper" :class="className" :style="{height}">
-    <div class="swiper-item clearfix" ref="swiperItem" :style="styleObj" :class="[isTransition ? 'swiper-transition' : '']">
-      <div v-for="(item, index) in newList" :key="index" >
-        <img :src="item.img" :alt="'banner' + index" :style="{width: width + 'px', height}">
-      </div>
-    </div>
-    <div class="swiper-dots">
-      <span v-for="(item, index) in list" :key="index" :class="[index === fixIndex ? 'active' : '']"></span>
-    </div>
-    <div class="swiper-prev" v-if="isPrevShow" @click="changeItem('prev')">&lt;</div>
-    <div class="swiper-next" v-if="isNextShow" @click="changeItem('next')">&gt;</div>
-</div>
+<swiper :list="bannerList" height="180px" :loop="true" :auto="true"></swiper>
+<div style="margin-top: 10px"></div>
+<swiper :list="bannerList" height="180px" :loop="true" :auto="true" direction="vertical"></swiper>
 
-this.swiper = new Swiper(this.$refs.swiper, {
-    auto: this.auto,
-    loop: this.loop,
-    data: this.newList,
-    isTransition: this.isTransition,
-    on: (res) => {
-        this.transformx = res.transformx
-        this.newDuration = res.newDuration
-        this.fixIndex = res.fixIndex
-        this.left = res.left
-        this.currentIndex = res.currentIndex
-    }
-    })
+bannerList: [{
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/b0f3038egy1fvbl5ajgfcj20p00goq7n.jpg'
+    }, {
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/b0f3038egy1fvbl4twp0uj20p00gogo2.jpg'
+    }, {
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/663d3650gy1fq66vw50iwj20ff0aaaci.jpg'
+    }, {
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/b0f3038egy1fvbl5tg4hkj20gl087dgs.jpg'
+    }, {
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/b0f3038egy1fvbl63v7dej20jc0a9754.jpg'
+    }, {
+    url: 'javascript:',
+    img: 'http://ww1.sinaimg.cn/large/b0f3038egy1fvbl6am6l6j20j70a7myf.jpg'
+}]
 ```
 
 
