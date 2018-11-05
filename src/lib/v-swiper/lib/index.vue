@@ -2,7 +2,10 @@
   <div class="swiper-wrap" ref="swiper" :class="className" :style="{height}">
     <div class="swiper-content clearfix" ref="swiperContent" :style="styleObj" :class="[isTransition ? 'swiper-transition' : '']">
       <div v-for="(item, index) in newList" class="swiper-item" :key="index" @click="selectItem(item)">
-        <img :src="item.img" :alt="'banner' + index" :style="{width, height}">
+        <img v-if="!isBroadcast" :src="item.img" :alt="'banner' + index" :style="{width, height}">
+        <div class="swiper-txt" v-else :style="{width, height}">
+          {{item.txt}}
+        </div>
       </div>
     </div>
     <div class="swiper-dots" v-if="showDots">
@@ -83,7 +86,11 @@ export default {
     className: {
       type: String
     },
-    initWidth: String
+    initWidth: String,
+    isBroadcast: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     newList () {
@@ -184,6 +191,18 @@ export default {
     >div {
       float: left;
       font-size: 0;
+    }
+
+    .swiper-txt {
+      font-size: 14px;
+      color: #e64848;
+      margin: 0;
+      text-align: left;
+      padding: 5px 2px;
+      box-sizing: border-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
