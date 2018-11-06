@@ -3,7 +3,7 @@
     <div class="swiper-content clearfix" ref="swiperContent" :style="styleObj" :class="[isTransition ? 'swiper-transition' : '']">
       <div v-for="(item, index) in newList" class="swiper-item" :key="index" @click="selectItem(item)">
         <img v-if="!isBroadcast" :src="item.img" :alt="'banner' + index" :style="{width, height}">
-        <div class="swiper-txt" v-else :style="{width, height}">
+        <div class="swiper-txt" v-else :style="{width, height, lineHeight: height}">
           {{item.txt}}
         </div>
       </div>
@@ -129,6 +129,14 @@ export default {
       left: this.loop && !this.isTransition ? `-${initTransform}` : 0
     }
   },
+  watch:{
+    list (val) {
+      this.$nextTick(() => {
+        this.recomputed()
+        this.initSwiper()
+      })
+    }
+  },
   methods: {
     changeItem (key) {
       this.swiper.move(key)
@@ -168,12 +176,7 @@ export default {
       this.left = this.loop && !this.isTransition ? `-${initTransform}` : 0
     }
   },
-  mounted () {
-    this.$nextTick(() => {
-      this.recomputed()
-      this.initSwiper()
-    })
-  },
+  mounted () {},
   beforeDestroy () {
     this.swiper.destroy()
   }
