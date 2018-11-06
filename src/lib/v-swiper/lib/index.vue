@@ -118,7 +118,8 @@ export default {
     }
   },
   data () {
-    const initTransform = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth) : parseInt(this.height)
+    let height = this.remHeightToPx();
+    const initTransform = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth) : parseFloat(height)
     const width = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth + 'px') : '100%'
     return {
       width,
@@ -170,10 +171,16 @@ export default {
     },
     recomputed () {
       const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect()
+      let height = this.remHeightToPx()
       this.width = rect.width + 'px'
-      const initTransform = this.direction === 'horizontal' ? rect.width : parseInt(this.height)
+      const initTransform = this.direction === 'horizontal' ? rect.width : parseFloat(height)
       this.transformx = this.loop && this.isTransition ? `-${initTransform}px` : 0
       this.left = this.loop && !this.isTransition ? `-${initTransform}` : 0
+    },
+    remHeightToPx () {
+      let htmlFontSize = window.getComputedStyle(document.documentElement).fontSize || (document.documentElement.currentStyle && document.documentElement.currentStyle['font-size']) || '75px'
+      let reg = /rem/ig
+      return reg.test(this.height) ? parseFloat(this.height) * parseInt(htmlFontSize) : this.height
     }
   },
   mounted () {},
@@ -206,6 +213,16 @@ export default {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      // hack 安卓下line-height布局中的bug
+      &::before {
+          content: '';
+          display: inline-block;
+          vertical-align: middle;
+          width: 0;
+          height: 100%;
+          margin-top: 3px;
+      }
     }
   }
 

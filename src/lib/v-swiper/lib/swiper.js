@@ -41,6 +41,7 @@ class Swiper {
     this.timer = null
     this.timer1 = null
     this.timer2 = null
+    this.htmlFontSize = window.getComputedStyle(document.documentElement).fontSize || (document.documentElement.currentStyle && document.documentElement.currentStyle['font-size']) || '75px'
 
     this.init()
   }
@@ -269,8 +270,10 @@ class Swiper {
   }
 
   getListWidthsOrHeight () {
-    const { direction, height } = this.options
+    let { direction, height } = this.options
     const tempArr = []
+    const reg = /rem/ig
+    height = reg.test(height) ? parseFloat(height) * parseInt(this.htmlFontSize) : height
     for (let i = 0; i < this.data.length; i++) {
       let temp = direction === 'horizontal' ? this.width : parseInt(height)
       tempArr.push(temp * i)
