@@ -208,7 +208,6 @@ export default {
       color: #e64848;
       margin: 0;
       text-align: left;
-      padding: 5px 2px;
       box-sizing: border-box;
       overflow: hidden;
       text-overflow: ellipsis;

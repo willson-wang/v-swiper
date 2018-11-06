@@ -275,7 +275,7 @@ class Swiper {
     const reg = /rem/ig
     height = reg.test(height) ? parseFloat(height) * parseInt(this.htmlFontSize) : height
     for (let i = 0; i < this.data.length; i++) {
-      let temp = direction === 'horizontal' ? this.width : parseInt(height)
+      let temp = direction === 'horizontal' ? this.width : parseFloat(height)
       tempArr.push(temp * i)
     }
     this.listWidths = tempArr
