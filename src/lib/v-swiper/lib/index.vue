@@ -94,7 +94,7 @@ export default {
   },
   computed: {
     newList () {
-      if (this.loop) {
+      if (this.loop && this.list.length) {
         const tempArr = JSON.parse(JSON.stringify(this.list))
         tempArr.unshift(this.list[this.list.length - 1])
         tempArr.push(this.list[0])
@@ -161,7 +161,7 @@ export default {
       })
     },
     recomputed () {
-      const rect = this.$refs.swiper.getBoundingClientRect()
+      const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect()
       this.width = rect.width + 'px'
       const initTransform = this.direction === 'horizontal' ? rect.width : parseInt(this.height)
       this.transformx = this.loop && this.isTransition ? `-${initTransform}px` : 0
