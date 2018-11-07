@@ -11,8 +11,8 @@
     <div class="swiper-dots" v-if="showDots">
       <span v-for="(item, index) in list" :key="index" :class="[index === fixIndex ? 'active' : '']"></span>
     </div>
-    <div class="swiper-prev" v-if="isPrevShow" @click="changeItem('prev')">&lt;</div>
-    <div class="swiper-next" v-if="isNextShow" @click="changeItem('next')">&gt;</div>
+    <div class="swiper-prev" v-if="isPrevShow" @click="changeItem('prev')">{{lt}}</div>
+    <div class="swiper-next" v-if="isNextShow" @click="changeItem('next')">{{gt}}</div>
   </div>
 </template>
 
@@ -131,7 +131,9 @@ export default {
       transformx: this.loop && this.isTransition ? `-${initTransform}px` : 0,
       fixIndex: 0,
       newDuration: this.isTransition ? this.duration : 0,
-      left: this.loop && !this.isTransition ? `-${initTransform}` : 0
+      left: this.loop && !this.isTransition ? `-${initTransform}` : 0,
+      lt: '&lt;',
+      gt: '&gt;'
     }
   },
   watch:{
