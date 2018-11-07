@@ -139,8 +139,7 @@ export default {
   watch:{
     list (val) {
       this.$nextTick(() => {
-        this.recomputed()
-        this.initSwiper()
+        !this.swiper && this.initSwiper()
       })
     }
   },
@@ -191,9 +190,11 @@ export default {
       return reg.test(this.height) ? parseFloat(this.height) * parseInt(htmlFontSize) : this.height
     }
   },
-  mounted () {},
+  mounted () {
+    this.recomputed()
+  },
   beforeDestroy () {
-    this.swiper.destroy()
+    this.swiper && this.swiper.destroy()
   }
 }
 </script>
@@ -213,7 +214,6 @@ export default {
 
     .swiper-txt {
       font-size: 14px;
-      color: #e64848;
       margin: 0;
       text-align: left;
       box-sizing: border-box;

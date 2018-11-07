@@ -324,6 +324,7 @@ class Swiper {
   init () {
     if (!this.data.length) return
     this.getListWidthsOrHeight()
+    this.unbindEvent()
     this.bindEvent()
     this.stop()
     this.options.auto && this.autoPlay()
