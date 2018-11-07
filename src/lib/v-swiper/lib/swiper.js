@@ -161,6 +161,8 @@ class Swiper {
   }
 
   touchstartHandler (e) {
+    const { forbidTouchStart } = this.options;
+    if (forbidTouchStart) return;
     this.stop()
     this._start.x = e.changedTouches[0].pageX
     this._start.y = e.changedTouches[0].pageY
@@ -168,8 +170,8 @@ class Swiper {
   }
 
   touchmoveHandler (e) {
-    const { minMovingDistance, isTransition, direction } = this.options
-    if (this.data.length === 1) return
+    const { minMovingDistance, isTransition, direction, forbidTouchStart } = this.options
+    if (this.data.length === 1 || forbidTouchStart) return
     this._move.x = e.changedTouches[0].pageX
     this._move.y = e.changedTouches[0].pageY
 

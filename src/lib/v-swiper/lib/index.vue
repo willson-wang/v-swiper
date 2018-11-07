@@ -90,6 +90,10 @@ export default {
     isBroadcast: {
       type: Boolean,
       default: false
+    },
+    forbidTouchStart: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -154,6 +158,8 @@ export default {
         direction: this.direction,
         height: this.height,
         width: this.width,
+        interval: this.interval,
+        forbidTouchStart: this.forbidTouchStart,
         on: (res) => {
           this.transformx = res.transformx
           this.newDuration = res.newDuration
