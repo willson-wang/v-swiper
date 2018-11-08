@@ -137,10 +137,13 @@ export default {
     }
   },
   watch:{
-    list (val) {
-      this.$nextTick(() => {
-        !this.swiper && this.initSwiper()
-      })
+    list: {
+      handler (val) {
+        this.$nextTick(() => {
+          !this.swiper ? this.initSwiper() : (this.auto && this.swiper.autoPlay())
+        })
+      },
+      immediate: true
     }
   },
   methods: {
@@ -192,6 +195,9 @@ export default {
   },
   mounted () {
     this.recomputed()
+  },
+  deactivated () {
+    this.swiper && this.swiper.stop()
   },
   beforeDestroy () {
     this.swiper && this.swiper.destroy()

@@ -242,7 +242,7 @@ class Swiper {
 
   autoPlay () {
     const { interval } = this.options
-    this.timer1 && clearTimeout(this.timer1)
+    this.stop()
     var _move = () => {
       this.timer1 = setTimeout(() => {
         this.go(++this.currentIndex, 'next')
@@ -253,7 +253,9 @@ class Swiper {
   }
 
   stop () {
+    this.timer && clearTimeout(this.timer)
     this.timer1 && clearTimeout(this.timer1)
+    this.timer2 && clearTimeout(this.timer2)
   }
 
   getDistance (distance) {
