@@ -12,17 +12,26 @@
     "test": "npm run unit",
     "lint": "eslint --ext .js,.vue src test/unit test/e2e/specs",
     "fix": "eslint --fix --ext .js,.vue src test/unit test/e2e/specs",
-    "build": "node build/build.js"
+    "build": "node build/build.js",
+    "pt": "prettier --debug-check {src,test}/**/*.{js,vue}",
+    "pt:fix": "prettier --write {src,test}/**/*.js",
+    "pt:fixvue": "prettier --parser vue --write {src,test}/**/*.vue"
   },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "postcommit": "git update-index --again"
+      "post-commit": "git update-index --again"
     }
   },
   "lint-staged": {
     "linters": {
-      "*.{js,vue}": [
+      "*.js": [
+        "prettier --parser flow --write",
+        "eslint --fix",
+        "git add"
+      ],
+      "*.vue": [
+        "prettier --parser vue --write",
         "eslint --fix",
         "git add"
       ]
@@ -76,6 +85,7 @@
     "postcss-import": "^11.0.0",
     "postcss-loader": "^2.0.8",
     "postcss-url": "^7.2.1",
+    "prettier": "1.15.2",
     "rimraf": "^2.6.0",
     "semver": "^5.3.0",
     "shelljs": "^0.7.6",
