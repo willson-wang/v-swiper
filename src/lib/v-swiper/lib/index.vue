@@ -122,7 +122,7 @@ export default {
     }
   },
   data () {
-    let height = this.remHeightToPx();
+    let height = this.remHeightToPx()
     const initTransform = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth) : parseFloat(height)
     const width = this.direction === 'horizontal' ? (this.initWidth || window.innerWidth + 'px') : '100%'
     return {
@@ -136,7 +136,7 @@ export default {
       gt: '&gt;'
     }
   },
-  watch:{
+  watch: {
     list: {
       handler (val) {
         this.$nextTick(() => {

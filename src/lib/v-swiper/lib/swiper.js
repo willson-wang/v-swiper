@@ -161,8 +161,8 @@ class Swiper {
   }
 
   touchstartHandler (e) {
-    const { forbidTouchStart } = this.options;
-    if (forbidTouchStart) return;
+    const { forbidTouchStart } = this.options
+    if (forbidTouchStart) return
     this.stop()
     this._start.x = e.changedTouches[0].pageX
     this._start.y = e.changedTouches[0].pageY
