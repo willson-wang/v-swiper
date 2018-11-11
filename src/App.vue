@@ -53,6 +53,9 @@ export default {
         txt: '这是一条消息6'
       }]
     }
+  },
+  methods: {
+
   }
 }
 </script>
