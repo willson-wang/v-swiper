@@ -180,9 +180,10 @@ export default {
       })
     },
     recomputed () {
-      const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect()
+      const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect() || {}
       let height = this.remHeightToPx()
-      this.width = rect.width + 'px'
+      this.width = rect.width ? `${rect.width}px` : '100%'
+      if (this.fixIndex) return
       const initTransform = this.direction === 'horizontal' ? rect.width : parseFloat(height)
       this.transformx = this.loop && this.isTransition ? `-${initTransform}px` : 0
       this.left = this.loop && !this.isTransition ? `-${initTransform}` : 0
