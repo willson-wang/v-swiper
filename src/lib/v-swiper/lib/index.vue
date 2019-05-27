@@ -170,6 +170,12 @@ export default {
                 })
             },
             immediate: true
+        },
+        fixIndex: {
+            handler(val) {
+                this.$emit('input', val)
+            },
+            immediate: true
         }
     },
     methods: {
@@ -206,7 +212,7 @@ export default {
             })
         },
         recomputed() {
-            const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect()
+            const rect = this.$refs.swiper && this.$refs.swiper.getBoundingClientRect() || {}
             let height = this.remHeightToPx()
             this.width = rect.width ? `${rect.width}px` : '100%'
             if (this.fixIndex) return
