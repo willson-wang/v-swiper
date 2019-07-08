@@ -1,373 +1,354 @@
 const DEFAULT_OPTIONS = {
+    currentIndex: 0,
+    width: 0,
+    slideDerection: '',
+    list: [],
+    interval: 4000,
+    auto: false,
+    loop: false,
     direction: 'horizontal',
     showDots: false,
     dotsPosition: 'center',
-    height: '180px',
-    auto: false,
-    loop: false,
     duration: 500,
-    interval: 4000,
-    animateInterval: 20,
-    isTransition: true,
-    minMovingDistance: 30,
-    threshold: 50,
-    isPrevShow: false,
-    isNextShow: false,
-    data: []
+    minMovingDistance: 30
 }
 
 class Swiper {
-    constructor(wrap, options) {
-        this.options = Object.assign({}, DEFAULT_OPTIONS, options)
-        const { loop, isTransition, on, end, direction, height, width, resize } = this.options
-        const initTransform =
-            direction === 'horizontal' ? window && window.innerWidth : parseInt(height)
+    constructor(props) {
+        const opt = Object.assign({}, DEFAULT_OPTIONS, props)
+        const {
+            currentIndex,
+            width,
+            slideDerection,
+            list,
+            wrap,
+            duration,
+            interval,
+            auto,
+            loop,
+            direction,
+            minMovingDistance
+        } = opt
+        this.currentIndex = currentIndex
+        this.width = width
+        this.slideDerection = slideDerection
+        this._touchStartInfo = {}
+        this._touchMoveInfo = {}
+        this._touchEndInfo = {}
+        this.isTouchMoving = false
+        this.list = list
         this.wrap = wrap
-        this.swiperItem = this.wrap.children[0]
-        this.data = this.options.data
-        this.currentIndex = loop ? 1 : 0
-        this.transformx = loop && isTransition ? `-${initTransform}px` : 0
-        this.listWidths = []
-        this.fixIndex = 0
-        this.newDuration = isTransition ? this.duration : 0
-        this.left = loop && !isTransition ? `-${initTransform}` : 0
-        this.width = (width && parseInt(width)) || window.innerWidth
-        this.on = on
-        this.animateEnd = end
-        this.resize = resize
-        this._isMoved = false
-        this._start = {}
-        this._move = {}
-        this._end = {}
-        this.timer = null
-        this.timer1 = null
-        this.timer2 = null
-        this.htmlFontSize =
-            window.getComputedStyle(document.documentElement).fontSize ||
-            (document.documentElement.currentStyle &&
-                document.documentElement.currentStyle['font-size']) ||
-            '75px'
-
-        this.init()
-    }
-
-    move(key) {
-        key === 'next' ? this.go(++this.currentIndex, 'next') : this.go(--this.currentIndex, 'prev')
-    }
-
-    go(index, turn) {
-        let { isTransition, duration, loop, auto, direction } = this.options
-        this.newDuration = isTransition ? duration : 0
-        if (!loop) {
-            if (index >= this.listWidths.length) {
-                if (!auto) {
-                    this.currentIndex = index = this.listWidths.length - 1
-                    return
-                } else {
-                    this.currentIndex = index = 0
-                }
-            } else if (this.currentIndex < 0) {
-                if (!auto) {
-                    this.currentIndex = index = 0
-                    return
-                } else {
-                    this.currentIndex = index = this.listWidths.length - 1
-                }
-            }
+        this.duration = duration
+        this._eventHandler = {}
+        this.interval = interval
+        this.auto = auto
+        this.loop = loop
+        this.minMovingDistance = minMovingDistance
+        this.direction = direction
+        this.onlyOne = this.list.length === 1
+        if (!this.list.length) {
+            return
         }
-        let other = turn === 'next' ? index - 1 : index + 1
-        if (!loop && index === 0 && direction === 'horizontal') other = this.listWidths.length - 1
-        isTransition ? this.setTransform(index, other) : this.setRequestAnimationFrame(index, other)
+        this._init()
+        this._auto()
+        this._bindEvent()
     }
 
-    setRequestAnimationFrame(index, other) {
-        const { duration, animateInterval } = this.options
-        var speed = (this.listWidths[index] - this.listWidths[other]) / (duration / animateInterval)
-        var target = -this.listWidths[index]
-        this.fixCurrentIndex(index, index > other)
-        this.setAnimationLeft(target, speed, () => {
-            this.resetLeft(index, index > other)
+    _init() {
+        this._updateWidth()
+        this.getSwiperItem()
+        this.setOffset()
+        this.setInitTransform()
+    }
+
+    _auto() {
+        this._stop()
+        if (this.auto) {
+            this.timer = setTimeout(() => {
+                this.next()
+            }, this.interval)
+        }
+    }
+
+    _stop() {
+        this.timer && clearTimeout(this.timer)
+    }
+
+    _bindEvent() {
+        const transitionEvent = this.checkTransitionEvent()
+        const swiperItem = this.getSwiperItem()
+        const swiper = this.getSwiper()
+        swiperItem[0] &&
+            swiperItem[0].addEventListener(
+                transitionEvent,
+                this.transitionEndHandler.bind(this),
+                false
+            )
+        swiper.addEventListener('touchstart', this.handleTouchStart.bind(this), false)
+        swiper.addEventListener('touchmove', this.handleTouchMove.bind(this), false)
+        swiper.addEventListener('touchend', this.handleTouchEnd.bind(this), false)
+        window.addEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+    }
+
+    _unbindEvent() {
+        const transitionEvent = this.checkTransitionEvent()
+        const swiperItem = this.getSwiperItem()
+        const swiper = this.getSwiper()
+        swiperItem[0] &&
+            swiperItem[0].removeEventListener(transitionEvent, this.transitionEndHandler, false)
+        swiper.removeEventListener('touchstart', this.handleTouchStart, false)
+        swiper.removeEventListener('touchmove', this.handleTouchMove, false)
+        swiper.removeEventListener('touchend', this.handleTouchEnd, false)
+        window.removeEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+    }
+
+    on(event, callback) {
+        if (this._eventHandler[event]) {
+            console.error('event不能重复注册')
+        }
+        if (typeof callback !== 'function') {
+            console.error('callback需要是function')
+        }
+        this._eventHandler[event] = callback
+        return this
+    }
+
+    _updateWidth() {
+        const swiper = this.getSwiper()
+        this.width =
+            this.direction === 'horizontal'
+                ? swiper.offsetWidth || document.documentElement.offsetWidth
+                : swiper.offsetHeight
+    }
+
+    next() {
+        this.slideDerection = 'nexted'
+        this.currentIndex += 1
+        this.go(this.currentIndex)
+    }
+
+    prev() {
+        this.slideDerection = 'preved'
+        this.currentIndex -= 1
+        this.go(this.currentIndex)
+    }
+
+    go(idx) {
+        this._stop()
+        if (idx > this.list.length - 1) {
+            this.currentIndex = 0
+        }
+        if (idx < 0) {
+            this.currentIndex = this.list.length - 1
+        }
+        // 设置切换transform,同时设置this.duration，开启过度动画
+        this.forItems((item, key) => {
+            this.setTransition(item, this.duration)
+            let distance =
+                this.slideDerection === 'nexted'
+                    ? this._offset[key] - this.width
+                    : this._offset[key] + this.width
+            if (!this.loop && this.auto && this.currentIndex === 0) {
+                distance = key * this.width
+            }
+            this.setTransform(item, distance)
         })
+        this._auto()
     }
 
-    setAnimationLeft(target, speed, callback) {
-        const { animateInterval } = this.options
-        this.cancelAnimationFrame(this.timer)
-        var animate = () => {
-            this.left -= speed
-            if ((speed > 0 && this.left >= target) || (speed < 0 && this.left <= target)) {
-                this.timer = this.requestAnimationFrame(animate, animateInterval)
-            } else {
-                this.left = target
-                this._isMoved = true
-                this.cancelAnimationFrame(this.timer)
-                callback && callback()
-            }
-            this.on &&
-                this.on({
-                    left: this.left,
-                    newDuration: this.newDuration,
-                    fixIndex: this.fixIndex,
-                    currentIndex: this.currentIndex
-                })
+    setDom(opration, node, parentNode, brotherNode) {
+        // parentNode.insertBefore(newNode, referenceNode)
+        // node.removeChild(child)
+        // node.appendChild(child)
+        switch (opration) {
+        case 'remove':
+            parentNode.removeChild(node)
+            break
+        case 'append':
+            parentNode.appendChild(node)
+            break
+        case 'insertBefore':
+            parentNode.insertBefore(node, brotherNode)
+            break
+        default:
+            console.log('无匹配操作')
         }
-        this.timer = this.requestAnimationFrame(animate, animateInterval)
+        return node
     }
 
-    resetLeft(index, turn) {
-        const { loop } = this.options
-        if (!loop) return
-        if (turn && index >= this.listWidths.length - 1) {
-            this.currentIndex = index = 1
-        } else if (!turn && index <= 0) {
-            this.currentIndex = index = this.listWidths.length - 2
+    transitionEndHandler(e) {
+        // 如果开启无缝轮播，transition动画结束之后，调整元素位置
+        if (this.loop) {
+            let swiperItem = this.getSwiperItem()
+            const { parentNode } = swiperItem[0]
+            const temp =
+                this.slideDerection === 'nexted'
+                    ? this.setDom('remove', swiperItem[0], parentNode)
+                    : this.setDom('remove', swiperItem[swiperItem.length - 1], parentNode)
+            swiperItem = this.getSwiperItem()
+            this.slideDerection === 'nexted'
+                ? this.setDom('append', temp, parentNode)
+                : this.setDom('insertBefore', temp, parentNode, swiperItem[0])
         }
-        this.fixCurrentIndex(index, turn)
-        this.left = `${-this.listWidths[index]}`
-        this.on &&
-            this.on({
-                left: this.left,
-                newDuration: this.newDuration,
-                fixIndex: this.fixIndex,
-                currentIndex: this.currentIndex
-            })
-        this.animateEnd && this.animateEnd(this)
-    }
-
-    setTransform(index, other) {
-        const target = -this.listWidths[index]
-        this.fixCurrentIndex(index, index > other)
-        this.setAnimationTransform(target)
-        this.resetTranslate(index, index > other)
-        this._isMoved = true
-    }
-
-    setAnimationTransform(target) {
-        this.transformx = `${target}px`
-        this.on &&
-            this.on({
-                transformx: this.transformx,
-                newDuration: this.newDuration,
-                fixIndex: this.fixIndex,
-                currentIndex: this.currentIndex
-            })
-    }
-
-    resetTranslate(index, turn) {
-        let { loop, duration } = this.options
-        if (!loop) return
-        if ((turn && index >= this.listWidths.length - 1) || (!turn && this.currentIndex <= 0)) {
-            setTimeout(() => {
-                if (turn && index >= this.listWidths.length - 1) {
-                    this.currentIndex = index = 1
-                } else if (!turn && this.currentIndex <= 0) {
-                    this.currentIndex = index = this.listWidths.length - 2
+        // 调整轮播元素transform，this.transtion = 0不设置动画
+        this.forItems((item, key) => {
+            this.setTransition(item)
+            let distance = this._offset[key]
+            if (!this.loop) {
+                distance =
+                    this.slideDerection === 'nexted' ? distance - this.width : distance + this.width
+                if (this.auto && this.currentIndex === 0) {
+                    distance = key * this.width
                 }
-                this.transformx = `${-this.listWidths[index]}px`
-                this.newDuration = 0
-                this.fixCurrentIndex(index, turn)
-                this.on &&
-                    this.on({
-                        transformx: this.transformx,
-                        newDuration: this.newDuration,
-                        fixIndex: this.fixIndex,
-                        currentIndex: this.currentIndex
-                    })
-                this.animateEnd && this.animateEnd(this)
-            }, duration)
-        }
-    }
-
-    requestAnimationFrame(callback, time) {
-        return typeof window.requestAnimationFrame !== 'undefined'
-            ? window.requestAnimationFrame(callback)
-            : window.setTimeout(callback, time)
-    }
-
-    cancelAnimationFrame(timer) {
-        return typeof window.cancelAnimationFrame !== 'undefined'
-            ? window.cancelAnimationFrame(timer)
-            : window.clearTimeout(timer)
-    }
-
-    touchstartHandler(e) {
-        const { forbidTouchStart } = this.options
-        if (forbidTouchStart) return
-        this.stop()
-        this._start.x = e.changedTouches[0].pageX
-        this._start.y = e.changedTouches[0].pageY
-        this._isMoved = false
-    }
-
-    touchmoveHandler(e) {
-        const { minMovingDistance, isTransition, direction, forbidTouchStart } = this.options
-        if (this.data.length === 1 || forbidTouchStart) return
-        this._move.x = e.changedTouches[0].pageX
-        this._move.y = e.changedTouches[0].pageY
-
-        let distanceX = this._move.x - this._start.x
-        let distanceY = this._move.y - this._start.y
-
-        let distance = distanceY
-
-        let isScrollY = Math.abs(distanceY) > Math.abs(distanceX)
-
-        if (direction === 'horizontal' && !isScrollY) {
-            distance = distanceX
-        }
-
-        if (
-            (minMovingDistance && Math.abs(distance) >= minMovingDistance) ||
-            !minMovingDistance ||
-            this._isMoved
-        ) {
-            isTransition &&
-                this.setAnimationTransform(distance - this.listWidths[this.currentIndex])
-            !isTransition &&
-                this.setAnimationLeft(distance - this.listWidths[this.currentIndex], 10)
-        }
+            }
+            this.setTransform(item, distance)
+        })
+        this.setOffset()
+        // transition结束监听
+        this._eventHandler.swiperEnd && this._eventHandler.swiperEnd.call(this, this.currentIndex)
         e.preventDefault()
     }
 
-    touchendHandler(e) {
-        const { direction, threshold, isTransition, auto, interval } = this.options
-        if (this.data.length === 1) return
-        this._end.x = e.changedTouches[0].pageX
-        this._end.y = e.changedTouches[0].pageY
-        let distance = this._end.y - this._start.y
-        if (direction === 'horizontal') {
-            distance = this._end.x - this._start.x
+    checkTransitionEvent() {
+        const el = document.createElement('div')
+
+        const transitions = {
+            transition: 'transitionend',
+            OTransition: 'oTransitionEnd',
+            MozTransition: 'transitionend',
+            WebkitTransition: 'webkitTransitionEnd'
         }
 
-        distance = this.getDistance(distance)
-        if (distance > threshold) {
-            this.go(--this.currentIndex, 'prev')
-        } else if (distance < -threshold) {
-            this.go(++this.currentIndex, 'next')
-        } else {
-            !isTransition && this.setAnimationLeft(-this.listWidths[this.currentIndex], -10)
-            isTransition && this.setAnimationTransform(-this.listWidths[this.currentIndex])
-        }
-        clearTimeout(this.timer2)
-        this.timer2 = setTimeout(() => {
-            auto && this.autoPlay()
-        }, interval)
-    }
-
-    resizeHandler() {
-        this.resize && this.resize()
-        this.destroy()
-        this.width = window && window.innerWidth
-        this.init()
-    }
-
-    focusHandler() {
-        this.options.auto && this.autoPlay()
-    }
-
-    blurHandler() {
-        this.stop()
-    }
-
-    setImgWidth() {
-        const imgs = this.wrap.getElementsByTagName('img')
-        Array.from(imgs).forEach(item => {
-            item.style.width = `${this.width}px`
-        })
-    }
-
-    autoPlay() {
-        const { interval } = this.options
-        this.stop()
-        var _move = () => {
-            this.timer1 = setTimeout(() => {
-                this.go(++this.currentIndex, 'next')
-                _move()
-            }, interval)
-        }
-        _move()
-    }
-
-    stop() {
-        this.timer && clearTimeout(this.timer)
-        this.timer1 && clearTimeout(this.timer1)
-        this.timer2 && clearTimeout(this.timer2)
-    }
-
-    getDistance(distance) {
-        const { loop } = this.options
-        if (loop) {
-            return distance
-        } else {
-            if (distance > 0 && this.currentIndex === 0) {
-                return 0
-            } else if (distance < 0 && this.currentIndex === this.data.length - 1) {
-                return 0
-            } else {
-                return distance
+        for (let t in transitions) {
+            if (el.style[t] !== undefined) {
+                return transitions[t]
             }
         }
     }
 
-    getListWidthsOrHeight() {
-        let { direction, height } = this.options
-        const tempArr = []
-        const reg = /rem/gi
-        height = reg.test(height) ? parseFloat(height) * parseInt(this.htmlFontSize) : height
-        for (let i = 0; i < this.data.length; i++) {
-            let temp = direction === 'horizontal' ? this.width : parseFloat(height)
-            tempArr.push(temp * i)
+    handleTouchStart(e) {
+        const touches = e.targetTouches[0]
+        this._touchStartInfo = {
+            pageX: touches.pageX,
+            pageY: touches.pageY
         }
-        this.listWidths = tempArr
     }
 
-    fixCurrentIndex(val, turn) {
-        const { loop } = this.options
-        if (!loop) {
-            this.fixIndex = this.currentIndex
-            return
+    handleTouchMove(e) {
+        this.isTouchMoving = true
+        const touches = e.targetTouches[0]
+        this._touchMoveInfo = {
+            pageX: touches.pageX,
+            pageY: touches.pageY
         }
-        if (turn) {
-            this.fixIndex =
-                this.currentIndex >= this.listWidths.length - 1 ? 0 : this.currentIndex - 1
+        const moveDistanceX = this._touchMoveInfo.pageX - this._touchStartInfo.pageX
+        const moveDistanceY = this._touchMoveInfo.pageY - this._touchStartInfo.pageY
+        const moveDistance = this.direction === 'horizontal' ? moveDistanceX : moveDistanceY
+        // 设置移动距离
+        this.forItems((item, index) => {
+            this.setTransition(item)
+            const distance = parseInt(item.dataset.offset, 10) + moveDistance
+            this.setTransform(item, distance)
+        })
+    }
+
+    handleTouchEnd(e) {
+        this.isTouchMoving = false
+        const touches = e.changedTouches[0]
+        this._touchEndInfo = {
+            pageX: touches.pageX,
+            pageY: touches.pageY
+        }
+        const distanceX = this._touchEndInfo.pageX - this._touchStartInfo.pageX
+        const distanceY = this._touchEndInfo.pageY - this._touchStartInfo.pageY
+        const moveDistance = this.direction === 'horizontal' ? distanceX : distanceY
+        // 是否需要切换到上一个or下一个
+        if (
+            moveDistance > this.minMovingDistance &&
+            (this.loop || (!this.loop && this.currentIndex !== 0))
+        ) {
+            this.prev()
+        } else if (
+            moveDistance < -this.minMovingDistance &&
+            (this.loop || (!this.loop && this.currentIndex !== this.list.length - 1))
+        ) {
+            this.next()
         } else {
-            this.fixIndex =
-                this.currentIndex <= 0 ? this.listWidths.length - 3 : this.currentIndex - 1
+            this.forItems(item => {
+                this.setTransition(item)
+                const distance = parseInt(item.dataset.offset, 10)
+                this.setTransform(item, distance)
+            })
         }
     }
 
-    bindEvent() {
-        this.wrap.addEventListener('touchstart', this.touchstartHandler.bind(this), false)
-        this.wrap.addEventListener('touchmove', this.touchmoveHandler.bind(this), false)
-        this.wrap.addEventListener('touchend', this.touchendHandler.bind(this), false)
-        window.addEventListener('resize', this.resizeHandler.bind(this), false)
-        window.addEventListener('focus', this.focusHandler.bind(this), false)
-        window.addEventListener('blur', this.blurHandler.bind(this), false)
+    handleTouchResize() {
+        setTimeout(() => {
+            this._updateWidth()
+            this.setOffset()
+            this.setInitTransform()
+        }, 100)
     }
 
-    unbindEvent() {
-        this.wrap.removeEventListener('touchstart', this.touchstartHandler.bind(this), false)
-        this.wrap.removeEventListener('touchmove', this.touchmoveHandler.bind(this), false)
-        this.wrap.removeEventListener('touchend', this.touchendHandler.bind(this), false)
-        window.removeEventListener('resize', this.resizeHandler.bind(this), false)
-        window.removeEventListener('focus', this.focusHandler.bind(this), false)
-        window.removeEventListener('blur', this.blurHandler.bind(this), false)
+    setTransition(item, duration = 0) {
+        if (this.onlyOne) return
+        const transition = `all ${duration}ms ease 0s`
+        item.style.webkitTransition = transition
+        item.style.transition = transition
     }
 
-    destroy() {
-        this.cancelAnimationFrame(this.timer)
-        clearTimeout(this.timer1)
-        clearTimeout(this.timer2)
-        this.unbindEvent()
+    setTransform(item, distance) {
+        if (this.onlyOne) return
+        const transform =
+            this.direction === 'horizontal'
+                ? `translate3d(${distance}px, 0, 0)`
+                : `translate3d(0, ${distance}px, 0)`
+        item.style.transform = transform
     }
 
-    init() {
-        if (!this.data.length) return
-        this.getListWidthsOrHeight()
-        this.unbindEvent()
-        this.bindEvent()
-        this.stop()
-        this.options.auto && this.autoPlay()
+    setOffset() {
+        // 0 750 1500 2250
+        // -750 0 750 1500
+        // -1500 -750 0 750
+        // -2250 -1500 -750 0
+        // 设置元素的data-offset属性
+        const temp = this.list.map((item, index) => {
+            return this.loop ? -this.width * (1 - index) : this.width * (index - this.currentIndex)
+        })
+        this._offset = temp || []
+        const swiperItem = this.getSwiperItem()
+        this._offset.forEach((offset, index) => {
+            swiperItem[index].setAttribute('data-offset', offset)
+        })
+    }
+
+    getSwiperItem() {
+        const children = this.wrap.querySelectorAll(`.slide-item`) || []
+        return Array.from(children)
+    }
+
+    getSwiper() {
+        return this.wrap || {}
+    }
+
+    forItems(fn) {
+        const itemEles = this.getSwiperItem()
+        itemEles.forEach(fn)
+    }
+
+    setInitTransform() {
+        const itemEles = this.getSwiperItem()
+        itemEles.forEach((item, key) => {
+            if (this.onlyOne) return
+            const distance = this._offset[key]
+            this.setTransform(item, distance)
+        })
+    }
+
+    destory() {
+        this._stop()
+        this._unbindEvent()
+        this.currentIndex = 0
     }
 }
 
