@@ -77,8 +77,7 @@
   0 1 2 3
 0 1 2 3
  *  */
-import Swiper from './Swiper'
-
+import Swiper from './swiper'
 export default {
     name: 'Swiper',
     props: {
