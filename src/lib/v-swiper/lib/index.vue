@@ -11,7 +11,7 @@
                 <div
                     v-if="!isBroadcast"
                     class="slide-item__img"
-                    :style="{ backgroundImage: `url(${item.img})` }"
+                    :style="{ backgroundImage: 'url(' + item.img +')' }"
                 ></div>
                 <div class="swiper-txt" v-else :style="{ height, lineHeight: height }">
                     {{ item.txt }}
@@ -124,7 +124,7 @@ export default {
             default: 30
         },
         interval: {
-            type: Number,
+            type: [Number, String],
             default: 4000
         },
         className: {
@@ -156,7 +156,8 @@ export default {
                 auto: this.auto,
                 loop: this.loop,
                 direction: this.direction,
-                minMovingDistance: this.minMovingDistance
+                minMovingDistance: this.minMovingDistance,
+                interval: this.interval
             }).on('swiperEnd', function end(index) {
                 let idx = index
                 if (vm.loop && vm.list.length === 2) {
@@ -168,11 +169,13 @@ export default {
         },
         reRender() {
             if (!this.$el) return
+            this.swiper && this.swiper.destory()
+            this.newList = this.getNewList()
             this.$nextTick(() => {
-                this.destory()
                 this.currentIndex = this.value
-                this.getNewList()
-                this.init(this.value)
+                if (this.newList.length) {
+                  this.init(this.value)
+                }
             })
         },
         getNewList() {
@@ -201,6 +204,13 @@ export default {
             if (JSON.stringify(val) !== JSON.stringify(oldVal)) {
                 this.reRender()
             }
+        },
+        auto(val) {
+            if (!val) {
+                this.swiper && this.swiper._stop()
+            } else {
+                this.swiper && this.swiper._auto()
+            }
         }
     },
     created() {
@@ -213,6 +223,12 @@ export default {
     },
     beforeDestory() {
         this.swiper && this.swiper.destroy()
+    },
+    activated() {
+        this.swiper && this.auto && this.swiper._auto()
+    },
+    deactivated() {
+        this.swiper && this.auto && this.swiper._stop()
     }
 }
 </script>
