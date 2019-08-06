@@ -169,9 +169,9 @@ export default {
         reRender() {
             if (!this.$el) return
             this.swiper && this.swiper.destory()
+            this.currentIndex = 0
             this.newList = this.getNewList()
             this.$nextTick(() => {
-                this.currentIndex = 0
                 if (this.newList.length) {
                   this.init(this.currentIndex)
                 }
