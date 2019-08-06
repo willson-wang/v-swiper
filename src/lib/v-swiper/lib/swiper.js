@@ -83,16 +83,22 @@ class Swiper {
         const swiperItem = this.getSwiperItem()
         const swiper = this.getSwiper()
         this.bindTransitionEndHandler = this.transitionEndHandler.bind(this)
+        this.bindHandleTouchStart = this.handleTouchStart.bind(this)
+        this.bindHandleTouchMove = this.handleTouchMove.bind(this)
+        this.bindHandleTouchEnd = this.handleTouchEnd.bind(this)
+        this.bindHandleTouchResize = this.handleTouchResize.bind(this)
+        this.bindHandlerVisibilitychange = this.handleVisibilitychange.bind(this)
         swiperItem[0] &&
             swiperItem[0].addEventListener(
                 this.transitionEvent,
                 this.bindTransitionEndHandler,
                 false
             )
-        swiper.addEventListener('touchstart', this.handleTouchStart.bind(this), false)
-        swiper.addEventListener('touchmove', this.handleTouchMove.bind(this), false)
-        swiper.addEventListener('touchend', this.handleTouchEnd.bind(this), false)
-        window.addEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+        swiper.addEventListener('touchstart', this.bindHandleTouchStart, false)
+        swiper.addEventListener('touchmove', this.bindHandleTouchMove, false)
+        swiper.addEventListener('touchend', this.bindHandleTouchEnd, false)
+        window.addEventListener('orientationchange', this.bindHandleTouchResize, false)
+        document.addEventListener('visibilitychange', this.bindHandlerVisibilitychange, false)
     }
 
     _unbindEvent() {
@@ -100,10 +106,11 @@ class Swiper {
         this.forItems((item) => {
             item.removeEventListener(this.transitionEvent, this.bindTransitionEndHandler, false)
         })
-        swiper.removeEventListener('touchstart', this.handleTouchStart, false)
-        swiper.removeEventListener('touchmove', this.handleTouchMove, false)
-        swiper.removeEventListener('touchend', this.handleTouchEnd, false)
-        window.removeEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+        swiper.removeEventListener('touchstart', this.bindHandleTouchStart, false)
+        swiper.removeEventListener('touchmove', this.bindHandleTouchMove, false)
+        swiper.removeEventListener('touchend', this.bindHandleTouchEnd, false)
+        window.removeEventListener('orientationchange', this.bindHandleTouchResize.bind(this), false)
+        document.removeEventListener('visibilitychange', this.bindHandlerVisibilitychange, false)
     }
 
     on(event, callback) {
@@ -292,6 +299,14 @@ class Swiper {
             this.setOffset()
             this.setInitTransform()
         }, 100)
+    }
+
+    handleVisibilitychange() {
+        if (document.visibilityState === "visible") {
+            this.auto && this._auto()
+        } else {
+            this.auto && this._stop()
+        }
     }
 
     setTransition(item, duration = 0) {

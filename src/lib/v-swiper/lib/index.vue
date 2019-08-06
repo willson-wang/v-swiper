@@ -169,12 +169,16 @@ export default {
         reRender() {
             if (!this.$el) return
             this.swiper && this.swiper.destory()
-            this.currentIndex = 0
-            this.newList = this.getNewList()
+            // 清空之前的iten
+            this.newList = []
             this.$nextTick(() => {
-                if (this.newList.length) {
-                  this.init(this.currentIndex)
-                }
+                this.currentIndex = 0
+                this.newList = this.getNewList()
+                this.$nextTick(() => {
+                    if (this.newList.length) {
+                      this.init(this.currentIndex)
+                    }
+                })
             })
         },
         getNewList() {
