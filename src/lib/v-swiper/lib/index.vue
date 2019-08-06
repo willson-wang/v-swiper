@@ -6,7 +6,7 @@
                 v-for="(item, index) in newList"
                 :class="[index === 1 && 'active']"
                 :key="index"
-                @click="selectItem"
+                @click="selectItem(item)"
             >
                 <div
                     v-if="!isBroadcast"
@@ -171,9 +171,9 @@ export default {
             this.swiper && this.swiper.destory()
             this.newList = this.getNewList()
             this.$nextTick(() => {
-                this.currentIndex = this.value
+                this.currentIndex = 0
                 if (this.newList.length) {
-                  this.init(this.value)
+                  this.init(this.currentIndex)
                 }
             })
         },
@@ -191,8 +191,9 @@ export default {
             }
             return tempArr
         },
-        selectItem() {
-            this.$emit('selectItem', this.currentIndex)
+        selectItem(item) {
+            item.currentIndex = this.currentIndex
+            this.$emit('selectItem', item)
         }
     },
     watch: {
