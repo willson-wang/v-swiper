@@ -6,12 +6,12 @@
                 v-for="(item, index) in newList"
                 :class="[index === 1 && 'active']"
                 :key="index"
-                @click="selectItem"
+                @click="selectItem(item)"
             >
                 <div
                     v-if="!isBroadcast"
                     class="slide-item__img"
-                    :style="{ backgroundImage: `url(${item.img})` }"
+                    :style="{ backgroundImage: 'url(' + item.img +')' }"
                 ></div>
                 <div
                     class="swiper-txt"
@@ -81,8 +81,7 @@
   0 1 2 3
 0 1 2 3
  *  */
-import Swiper from './Swiper'
-
+import Swiper from './swiper'
 export default {
     name: 'Swiper',
     props: {
@@ -128,7 +127,7 @@ export default {
             default: 30
         },
         interval: {
-            type: Number,
+            type: [Number, String],
             default: 4000
         },
         className: {
@@ -163,7 +162,8 @@ export default {
                 auto: this.auto,
                 loop: this.loop,
                 direction: this.direction,
-                minMovingDistance: this.minMovingDistance
+                minMovingDistance: this.minMovingDistance,
+                interval: this.interval
             }).on('swiperEnd', function end(index) {
                 let idx = index
                 if (vm.loop && vm.list.length === 2) {
@@ -175,11 +175,17 @@ export default {
         },
         reRender() {
             if (!this.$el) return
+            this.swiper && this.swiper.destory()
+            // 清空之前的iten
+            this.newList = []
             this.$nextTick(() => {
-                this.destory()
-                this.currentIndex = this.value
-                this.getNewList()
-                this.init(this.value)
+                this.currentIndex = 0
+                this.newList = this.getNewList()
+                this.$nextTick(() => {
+                    if (this.newList.length) {
+                      this.init(this.currentIndex)
+                    }
+                })
             })
         },
         getNewList() {
@@ -196,8 +202,9 @@ export default {
             }
             return tempArr
         },
-        selectItem() {
-            this.$emit('selectItem', this.currentIndex)
+        selectItem(item) {
+            item.currentIndex = this.currentIndex
+            this.$emit('selectItem', item)
         }
     },
     watch: {
@@ -207,6 +214,13 @@ export default {
         list(val, oldVal) {
             if (JSON.stringify(val) !== JSON.stringify(oldVal)) {
                 this.reRender()
+            }
+        },
+        auto(val) {
+            if (!val) {
+                this.swiper && this.swiper._stop()
+            } else {
+                this.swiper && this.swiper._auto()
             }
         }
     },
@@ -220,6 +234,12 @@ export default {
     },
     beforeDestory() {
         this.swiper && this.swiper.destroy()
+    },
+    activated() {
+        this.swiper && this.auto && this.swiper._auto()
+    },
+    deactivated() {
+        this.swiper && this.auto && this.swiper._stop()
     }
 }
 </script>

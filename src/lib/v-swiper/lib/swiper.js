@@ -13,6 +13,8 @@ const DEFAULT_OPTIONS = {
     minMovingDistance: 30
 }
 
+let uid = 0
+
 class Swiper {
     constructor(props) {
         const opt = Object.assign({}, DEFAULT_OPTIONS, props)
@@ -46,6 +48,9 @@ class Swiper {
         this.minMovingDistance = minMovingDistance
         this.direction = direction
         this.onlyOne = this.list.length === 1
+        this.uid = uid += 1
+        this.destoryed = false
+        this.transitionEvent = this.checkTransitionEvent()
         if (!this.list.length) {
             return
         }
@@ -63,7 +68,7 @@ class Swiper {
 
     _auto() {
         this._stop()
-        if (this.auto) {
+        if (this.auto && !this.destoryed && this.list.length > 1) {
             this.timer = setTimeout(() => {
                 this.next()
             }, this.interval)
@@ -75,31 +80,37 @@ class Swiper {
     }
 
     _bindEvent() {
-        const transitionEvent = this.checkTransitionEvent()
         const swiperItem = this.getSwiperItem()
         const swiper = this.getSwiper()
+        this.bindTransitionEndHandler = this.transitionEndHandler.bind(this)
+        this.bindHandleTouchStart = this.handleTouchStart.bind(this)
+        this.bindHandleTouchMove = this.handleTouchMove.bind(this)
+        this.bindHandleTouchEnd = this.handleTouchEnd.bind(this)
+        this.bindHandleTouchResize = this.handleTouchResize.bind(this)
+        this.bindHandlerVisibilitychange = this.handleVisibilitychange.bind(this)
         swiperItem[0] &&
             swiperItem[0].addEventListener(
-                transitionEvent,
-                this.transitionEndHandler.bind(this),
+                this.transitionEvent,
+                this.bindTransitionEndHandler,
                 false
             )
-        swiper.addEventListener('touchstart', this.handleTouchStart.bind(this), false)
-        swiper.addEventListener('touchmove', this.handleTouchMove.bind(this), false)
-        swiper.addEventListener('touchend', this.handleTouchEnd.bind(this), false)
-        window.addEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+        swiper.addEventListener('touchstart', this.bindHandleTouchStart, false)
+        swiper.addEventListener('touchmove', this.bindHandleTouchMove, false)
+        swiper.addEventListener('touchend', this.bindHandleTouchEnd, false)
+        window.addEventListener('orientationchange', this.bindHandleTouchResize, false)
+        document.addEventListener('visibilitychange', this.bindHandlerVisibilitychange, false)
     }
 
     _unbindEvent() {
-        const transitionEvent = this.checkTransitionEvent()
-        const swiperItem = this.getSwiperItem()
         const swiper = this.getSwiper()
-        swiperItem[0] &&
-            swiperItem[0].removeEventListener(transitionEvent, this.transitionEndHandler, false)
-        swiper.removeEventListener('touchstart', this.handleTouchStart, false)
-        swiper.removeEventListener('touchmove', this.handleTouchMove, false)
-        swiper.removeEventListener('touchend', this.handleTouchEnd, false)
-        window.removeEventListener('orientationchange', this.handleTouchResize.bind(this), false)
+        this.forItems((item) => {
+            item.removeEventListener(this.transitionEvent, this.bindTransitionEndHandler, false)
+        })
+        swiper.removeEventListener('touchstart', this.bindHandleTouchStart, false)
+        swiper.removeEventListener('touchmove', this.bindHandleTouchMove, false)
+        swiper.removeEventListener('touchend', this.bindHandleTouchEnd, false)
+        window.removeEventListener('orientationchange', this.bindHandleTouchResize.bind(this), false)
+        document.removeEventListener('visibilitychange', this.bindHandlerVisibilitychange, false)
     }
 
     on(event, callback) {
@@ -290,6 +301,14 @@ class Swiper {
         }, 100)
     }
 
+    handleVisibilitychange() {
+        if (document.visibilityState === "visible") {
+            this.auto && this._auto()
+        } else {
+            this.auto && this._stop()
+        }
+    }
+
     setTransition(item, duration = 0) {
         if (this.onlyOne) return
         const transition = `all ${duration}ms ease 0s`
@@ -346,6 +365,8 @@ class Swiper {
     }
 
     destory() {
+        this.destoryed = true
+        this.list.length = 0
         this._stop()
         this._unbindEvent()
         this.currentIndex = 0
