@@ -13,7 +13,11 @@
                     class="slide-item__img"
                     :style="{ backgroundImage: `url(${item.img})` }"
                 ></div>
-                <div class="swiper-txt" v-else :style="{ height, lineHeight: height }">
+                <div
+                    class="swiper-txt"
+                    v-else
+                    :style="{ height, lineHeight: height, color: txtColor }"
+                >
                     {{ item.txt }}
                 </div>
             </div>
@@ -128,6 +132,9 @@ export default {
             default: 4000
         },
         className: {
+            type: String
+        },
+        txtColor: {
             type: String
         }
     },
